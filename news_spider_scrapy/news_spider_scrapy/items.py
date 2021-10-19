@@ -6,6 +6,10 @@
 import scrapy
 
 
+class NewsUrl(scrapy.item):
+    url = scrapy.Field()
+
+
 class NewsSpiderScrapyItem(scrapy.Item):
     # define the fields for your item here like:
     url = scrapy.Field()

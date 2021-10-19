@@ -12,7 +12,7 @@ TencentNewsUrl = 'https://pacaio.match.qq.com/irs/rcd'
 # 要闻 https://pacaio.match.qq.com/pc/topNews?callback=__jp0
 # https://pacaio.match.qq.com/irs/rcd?cid=108&ext=&token=349ee24cdf9327a050ddad8c166bd3e3&page=1&expIds=&callback=__jp1
 # https://new.qq.com/cmsn/20180726/20180726A0QOLA00
-# https://new.qq.com/ omn/20180726/20180726A0QOLA.html
+# https://new.qq.com/omn/20180726/20180726A0QOLA.html
 
 
 def parse_news(response: Response):
