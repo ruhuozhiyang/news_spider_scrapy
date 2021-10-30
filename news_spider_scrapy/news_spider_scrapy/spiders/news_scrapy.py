@@ -1,72 +1,66 @@
-import json
-from scrapy import Spider
-from scrapy.http import Request
-from scrapy.http import Response
-from scrapy.http import FormRequest
-from bs4 import BeautifulSoup
-from ..items import NewsSpiderScrapyItem
-
-TencentNewsUrl = 'https://pacaio.match.qq.com/irs/rcd'
+import re
+import scrapy
+from ..items import NewsUrlItem
 
 
-# 要闻 https://pacaio.match.qq.com/pc/topNews?callback=__jp0
-# https://pacaio.match.qq.com/irs/rcd?cid=108&ext=&token=349ee24cdf9327a050ddad8c166bd3e3&page=1&expIds=&callback=__jp1
-# https://new.qq.com/cmsn/20180726/20180726A0QOLA00
-# https://new.qq.com/omn/20180726/20180726A0QOLA.html
-
-
-def parse_news(response: Response):
-    news = NewsSpiderScrapyItem()
-    news['url'] = response.url
-    soup = BeautifulSoup(response.text, "lxml")
-    news['title'] = soup.find('div', class_='LEFT').h1.text
-    news['content'] = ''
-    article = soup.find_all('p', class_='one-p')
-    for sentence in article:
-        news['content'] += sentence.text
-    print(news)
-    # return news
-
-
-def parse_contents(response: Response):
-    try:
-        data = json.load(response.text)
-    except Exception:
-        data = json.loads(response.text[(response.text.find('(') + 1):response.text.rfind(')')])
-
-    try:
-        data = data['data']
-    except LookupError:
-        pass
-    for url in data:
-        omn = url['vurl']
-        if omn.endswith('00') and '/cmsn/' in omn:
-            omn = omn.replace('/cmsn/', '/omn/')
-            omn = omn[:omn.rfind('00')] + '.html'
-        yield Request(url=omn, callback=parse_news)
-
-
-class TencentSpider(Spider):
+class TencentSpider(scrapy.Spider):
     name = 'news_scrapy'
+    allowed_domains = ['qq.com']
+    start_urls = ['http://www.qq.com/map/']
+    default_value = '暂无数据'
 
-    def parse(self, response, **kwargs):
-        pass
+    mobile_url = 'https://xw.qq.com/cmsid/{}'
+    recommend_url = 'https://pacaio.match.qq.com/xw/relate?num=6&id=20180425A0VYZO&callback=__jp1'  # 推荐新闻
+    mobile_ua = 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38' \
+                ' (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'
 
-    def start_requests(self):
-        yield FormRequest(
-            url=TencentNewsUrl,
-            formdata={
-                "cid": "58",
-                "token": "c232b098ee7611faeffc46409e836360",
-                "ext": "milite",
-                "page": "0",
-                "expIds": "",
-                "callback": "__jp0"
-            },
-            callback=parse_contents,
-            meta={
-                "page": "0",
-                "field": ""
-            }
-        )
+    custom_settings = {
+        'CONCURRENT_REQUESTS': 64,
+        'DOWNLOAD_DELAY': 0,
+        'COOKIES_ENABLED': False,
+        'LOG_LEVEL': 'INFO',
+        'RETRY_TIMES': 15,
+        'DEFAULT_REQUEST_HEADERS': {
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+            'accept-encoding': 'gzip, deflate, br',
+            'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'cache-control': 'max-age=0',
+        },
+        'REDIS_HOST': '127.0.0.1',
+        'REDIS_PORT': '6379',
+        'REDIS_DB': 'db0',
+        'ITEM_PIPELINES': {
+            'news_spider_scrapy.pipelines.RedisUrlsPipeline': 301,
+        },
+        'DOWNLOADER_MIDDLEWARES': {
+            # 'qq_news.middlewares.ProxyMiddleware': 543,
+        },
+    }
+
+    def parse(self, response):
+        """
+        采集所有子分类的链接
+        :param response:
+        :return: detail response
+        """
+        urls_list = []
+        for i in response.xpath('//*[@id="wrapCon"]/div/div[1]/div[2]/dl'):
+            urls = i.xpath('dd/ul/li/strong/a/@href').extract() or i.xpath('dd/ul/li/a/@href').extract()
+            urls_list.extend(i.strip() for i in urls)
+        for url in urls_list:
+            yield scrapy.Request(url, callback=self.parse_url)
+
+    def parse_url(self, response):
+        """
+        去子分类下采集所有符合要求的详情链接，从移动端爬数据
+        :param response: http://news.qq.com/
+        :return:
+        """
+        pat = re.compile('http://new.qq.com/.*/.*.html')
+        print(response.text)
+        detail_urls = pat.findall(response.text)
+        for url in detail_urls:
+            item = NewsUrlItem()
+            item['url'] = url
+            yield item
 

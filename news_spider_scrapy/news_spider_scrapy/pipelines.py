@@ -8,22 +8,24 @@
 from itemadapter import ItemAdapter
 
 import redis
-import pymongo
 
 
 class RedisUrlsPipeline(object):
 
     def __init__(self, redis_host, redis_port, redis_db):
-        self.redis_client = redis.StrictRedis(
-            host=redis_host, port=redis_port, db=redis_db)
+        self.redis_client = redis.StrictRedis(host=redis_host, port=redis_port, db=redis_db)
 
+    # 是一个类方法，是一种依赖注入的方式.
+    # 通过crawler对象，我们可以拿到Scrapy的所有核心组件，如全局配置的每个信息，然后创建一个Pipeline实例.
     @classmethod
     def from_crawler(cls, crawler):
         return cls(
-            mongo_uri=crawler.settings.get('MONGO_URI'),
-            mongo_db=crawler.settings.get('MONGO_DATABASE', 'items')
+            redis_host=crawler.settings.get('REDIS_HOST'),
+            redis_port=crawler.settings.get('REDIS_PORT'),
+            redis_db=crawler.settings.get('REDIS_DB'),
         )
 
+    # process_item()是必须要实现的方法，被定义的Item Pipeline会默认调用这个方法对Item进行处理.
     def process_item(self, item, spider):
         if type(item).__name__ == 'NewsUrl':
             redis_key = 'tencent_news:start_url'

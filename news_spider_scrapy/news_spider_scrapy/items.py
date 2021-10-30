@@ -2,12 +2,12 @@
 #
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/items.html
-
 import scrapy
 
 
-class NewsUrl(scrapy.item):
+class NewsUrlItem(scrapy.Item):
     url = scrapy.Field()
+    pass
 
 
 class NewsSpiderScrapyItem(scrapy.Item):
