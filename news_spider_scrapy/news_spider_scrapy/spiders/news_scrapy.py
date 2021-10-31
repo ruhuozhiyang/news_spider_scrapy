@@ -44,20 +44,32 @@ class TencentSpider(scrapy.Spider):
         :return: detail response
         """
         urls_list = []
+        """
+        xpath通配符
+        //表示选取任意位置的节点，不考虑位置.
+        //*选取所有元素.
+        //*[@id="wrapCon"]选取所有id为wrapCon的元素.
+        div[1]第一个div元素
+        """
         for i in response.xpath('//*[@id="wrapCon"]/div/div[1]/div[2]/dl'):
+            """
+            and从左到右扫描，返回第一个为假的表达式，无假值则返回最后一个表达式.
+            or从左到右扫描，返回第一个为真的表达式,无真值则返回最后一个表达式.
+            """
             urls = i.xpath('dd/ul/li/strong/a/@href').extract() or i.xpath('dd/ul/li/a/@href').extract()
+            """
+            Python strip() 方法用于移除字符串头尾指定的字符（默认为空格或换行符）或字符序列
+            """
             urls_list.extend(i.strip() for i in urls)
         for url in urls_list:
             yield scrapy.Request(url, callback=self.parse_url)
+            break
 
     def parse_url(self, response):
         """
         去子分类下采集所有符合要求的详情链接，从移动端爬数据
-        :param response: http://news.qq.com/
-        :return:
         """
         pat = re.compile('http://new.qq.com/.*/.*.html')
-        print(response.text)
         detail_urls = pat.findall(response.text)
         for url in detail_urls:
             item = NewsUrlItem()
