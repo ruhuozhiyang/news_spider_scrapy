@@ -1,7 +1,5 @@
-import scrapy
-import re
-import demjson
-from scrapy import FormRequest
+from bs4 import BeautifulSoup
+from scrapy.http import Request
 from scrapy_redis.spiders import RedisSpider
 from ..items import NewsDetailItem
 
@@ -40,9 +38,9 @@ class TencentNewsDetail(RedisSpider):
     }
 
     def parse(self, response, **kwargs):
-        url_ = self.mobile_url.format(response.url.split('/')[-1].split('.')[0])
-        yield FormRequest(
-            url=url_,
+        # url_ = self.mobile_url.format(response.url.split('/')[-1].split('.')[0])
+        yield Request(
+            url=response.url,
             callback=self.parse_detail,
             headers={
                 'User-Agent': self.mobile_ua,
@@ -55,14 +53,24 @@ class TencentNewsDetail(RedisSpider):
             if response.url == 'https://xw.qq.com/404.html':
                 return
 
-            item = NewsDetailItem()
-            print(response.text)
-            data = ''.join(re.findall(r'globalConfig\s=\s(\{.*?\});', response.text, re.S))
-            print(data)
+            news = NewsDetailItem()
+            """
+            Re库是Python的标准库，主要用于字符串匹配；
+            re.findall()搜索字符串，以列表类型返回全部能匹配的子串；
+            常用标记re.S，正则表达式中的.操作符能够匹配所有字符，默认匹配除换行外的所有字符；
+            """
+            # data = ''.join(re.findall(r'globalConfig\s=\s(\{.*?\});', response.text, re.S))
             # json_data = demjson.decode(data)
             #
             # for k, v in zip(list(json_data.keys()), list(json_data.values())):
             #     item[k] = v
             # yield item
+            news['url'] = response.url
+            soup = BeautifulSoup(response.text, "lxml")
+            news['title'] = soup.find('div', class_='LEFT').h1.text
+            news['content'] = ''
+            article = soup.find_all('p', class_='one-p')
+            for sentence in article:
+                news['content'] += sentence.text
         except Exception as e:
             self.logger.error('parse_content error {}, {}, {}'.format(e, response.url, response.text))

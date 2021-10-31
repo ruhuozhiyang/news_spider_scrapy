@@ -60,7 +60,6 @@ class TencentNewsScrapy(scrapy.Spider):
         except Exception:
             pass
         for ele in data:
-            print(ele['vurl'])
             item = NewsUrlItem()
             item['url'] = ele['vurl']
             yield item
