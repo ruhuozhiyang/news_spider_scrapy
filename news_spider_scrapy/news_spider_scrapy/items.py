@@ -10,7 +10,7 @@ class NewsUrlItem(scrapy.Item):
     pass
 
 
-class NewsSpiderScrapyItem(scrapy.Item):
+class NewsDetailItem(scrapy.Item):
     # define the fields for your item here like:
     url = scrapy.Field()
     title = scrapy.Field()

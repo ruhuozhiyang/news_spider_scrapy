@@ -37,6 +37,4 @@ class RedisUrlsPipeline(object):
             smembers key获取集合的内容
             """
             self.redis_client.sadd(redis_key, item['url'])
-            spider.logger.debug(
-                '===== Success push start_urls to REDIS with url {} ====='.format(item['url']))
             return item
