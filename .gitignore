@@ -128,4 +128,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-./news_spider_scrapy/news_spider_scrapy/result_news/
+./news_spider_scrapy/news_spider_scrapy/result_news
