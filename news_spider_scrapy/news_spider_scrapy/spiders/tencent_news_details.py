@@ -7,8 +7,7 @@ from ..items import NewsDetailItem
 redis中新闻url的消费者。消费完后redis中无数据.
 """
 
-result_news_path = '/Users/foiunclekay/Documents/GitHub/news_spider_scrapy/news_spider_scrapy' \
-                   '/news_spider_scrapy/result_news/'
+result_news_path = '/Users/foiunclekay/Desktop/result_news/'
 
 
 class TencentNewsDetail(RedisSpider):
