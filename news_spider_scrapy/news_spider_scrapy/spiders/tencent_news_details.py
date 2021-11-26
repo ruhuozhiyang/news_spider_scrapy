@@ -68,17 +68,14 @@ class TencentNewsDetail(RedisSpider):
             for sentence in article:
                 news['content'] += sentence.text
             self.count += 1
-            path = result_news_path + str(self.count) + '.txt'
+            path = result_news_path + str(int(self.count/500)) + '.txt'
             print(path)
-            with open(path, 'w') as f:
-                f.write(news['url'])
+            with open(path, 'a') as f:
+                f.write(news['url'].strip())
                 f.write('\n')
-                f.write(news['title'])
+                f.write(news['title'].replace('\n', ' ').replace('\r', ' '))
                 f.write('\n')
-                f.write('start')
+                f.write(news['content'].replace('\n', ' ').replace('\r', ' '))
                 f.write('\n')
-                f.write(news['content'])
-                f.write('\n')
-                f.write('end')
         except Exception as e:
             self.logger.error('parse_content error {}, {}, {}'.format(e, response.url, response.text))
